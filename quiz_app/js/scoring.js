@@ -1,71 +1,83 @@
 window.AnatomiaApp = window.AnatomiaApp || {};
 
 (function (App) {
-  const STORAGE_KEY = "anatomia_quiz_stats_v1";
+  const STORAGE_KEY = "anatomia_lower_limb_stats_v1";
 
-  function evaluateSet(selectedIds, primeIds, synergistIds, options) {
-    const opts = options || {};
-    const selected = Array.from(new Set(selectedIds || []));
-    const primeSet = new Set(primeIds || []);
-    const synSet = new Set((synergistIds || []).filter((id) => !primeSet.has(id)));
-
-    const expectedSet = opts.strictSynergists
-      ? new Set([...primeSet, ...synSet])
-      : primeSet;
-
-    const correctPrime = [];
-    const bonusSynergist = [];
-    const wrong = [];
-
-    selected.forEach((id) => {
-      if (expectedSet.has(id)) {
-        correctPrime.push(id);
-      } else if (!opts.strictSynergists && synSet.has(id)) {
-        bonusSynergist.push(id);
-      } else {
-        wrong.push(id);
-      }
-    });
-
+  function evaluateCategory(selectedValues, expectedValues) {
+    const selected = Array.from(
+      new Set(
+        (selectedValues || [])
+          .map((v) => String(v || "").trim())
+          .filter(Boolean)
+      )
+    );
+    const expected = Array.from(
+      new Set(
+        (expectedValues || [])
+          .map((v) => String(v || "").trim())
+          .filter(Boolean)
+      )
+    );
+    const expectedSet = new Set(expected);
     const selectedSet = new Set(selected);
-    const missedPrime = Array.from(expectedSet).filter((id) => !selectedSet.has(id));
-    const unselectedSynergists = opts.strictSynergists
-      ? []
-      : Array.from(synSet).filter((id) => !selectedSet.has(id));
 
-    const totalExpected = expectedSet.size;
-    const hits = correctPrime.length;
-    const fp = wrong.length;
+    const correct = selected.filter((v) => expectedSet.has(v));
+    const wrong = selected.filter((v) => !expectedSet.has(v));
+    const missing = expected.filter((v) => !selectedSet.has(v));
 
     let percent = 0;
-    if (totalExpected === 0) {
-      percent = fp === 0 ? 100 : 0;
-    } else if (hits > 0) {
-      // F1-based fair partial score that does not penalize synergist bonuses
-      percent = Math.round(((2 * hits) / (totalExpected + hits + fp)) * 100);
+    if (expected.length === 0) {
+      percent = wrong.length === 0 ? 100 : 0;
+    } else if (correct.length > 0) {
+      percent = Math.round(
+        ((2 * correct.length) / (expected.length + correct.length + wrong.length)) * 100
+      );
     }
 
     return {
       percent,
-      isPerfect: missedPrime.length === 0 && wrong.length === 0 && totalExpected > 0,
-      correctPrime,
-      missedPrime,
-      bonusSynergist,
-      unselectedSynergists,
-      wrong
+      isPerfect: missing.length === 0 && wrong.length === 0,
+      correct,
+      wrong,
+      missing,
+      expectedCount: expected.length
     };
   }
 
-  function evaluateSingleChoice(selectedId, correctId) {
-    const isCorrect = selectedId === correctId;
+  function evaluateMuscle(selectionsByCategory, muscle, activeCategoryIds) {
+    const byCategory = {};
+    let totalHits = 0;
+    let totalExpected = 0;
+    let totalWrong = 0;
+
+    (activeCategoryIds || []).forEach((catId) => {
+      const res = evaluateCategory(
+        selectionsByCategory[catId] || [],
+        muscle[catId] || []
+      );
+      byCategory[catId] = res;
+      totalHits += res.correct.length;
+      totalExpected += res.expectedCount;
+      totalWrong += res.wrong.length;
+    });
+
+    let percent = 0;
+    if (totalExpected === 0) {
+      percent = totalWrong === 0 ? 100 : 0;
+    } else if (totalHits > 0) {
+      percent = Math.round(
+        ((2 * totalHits) / (totalExpected + totalHits + totalWrong)) * 100
+      );
+    }
+
+    const isPerfect =
+      (activeCategoryIds || []).length > 0 &&
+      (activeCategoryIds || []).every((catId) => byCategory[catId].isPerfect);
+
     return {
-      percent: isCorrect ? 100 : 0,
-      isPerfect: isCorrect,
-      correctPrime: isCorrect ? [correctId] : [],
-      missedPrime: isCorrect ? [] : [correctId],
-      bonusSynergist: [],
-      unselectedSynergists: [],
-      wrong: !isCorrect && selectedId ? [selectedId] : []
+      percent,
+      isPerfect,
+      byCategory
     };
   }
 
@@ -74,9 +86,6 @@ window.AnatomiaApp = window.AnatomiaApp || {};
       totalAnswered: 0,
       perfectCount: 0,
       scoreSum: 0,
-      streak: 0,
-      bestStreak: 0,
-      missedMovements: {},
       missedMuscles: {}
     };
   }
@@ -85,7 +94,10 @@ window.AnatomiaApp = window.AnatomiaApp || {};
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return defaultStats();
-      return Object.assign(defaultStats(), JSON.parse(raw));
+      const parsed = JSON.parse(raw);
+      return Object.assign(defaultStats(), parsed, {
+        missedMuscles: Object.assign({}, parsed.missedMuscles || {})
+      });
     } catch (e) {
       return defaultStats();
     }
@@ -95,29 +107,26 @@ window.AnatomiaApp = window.AnatomiaApp || {};
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
     } catch (e) {
-      // Ignore storage quota / private mode errors
+      // Ignore storage quota or private mode restrictions
     }
   }
 
-  function recordResult(overallPercent, missedMovementIds, missedMuscleIds) {
+  function recordResult(muscleId, percent, isPerfect) {
     const stats = loadStats();
     stats.totalAnswered += 1;
-    stats.scoreSum += overallPercent;
-    if (overallPercent >= 80) {
-      stats.streak += 1;
-      if (stats.streak > stats.bestStreak) stats.bestStreak = stats.streak;
-    } else {
-      stats.streak = 0;
-    }
-    if (overallPercent === 100) {
+    stats.scoreSum += percent;
+    if (isPerfect) {
       stats.perfectCount += 1;
+      if (muscleId && stats.missedMuscles[muscleId]) {
+        if (stats.missedMuscles[muscleId] <= 1) {
+          delete stats.missedMuscles[muscleId];
+        } else {
+          stats.missedMuscles[muscleId] -= 1;
+        }
+      }
+    } else if (muscleId) {
+      stats.missedMuscles[muscleId] = (stats.missedMuscles[muscleId] || 0) + 1;
     }
-    (missedMovementIds || []).forEach((id) => {
-      stats.missedMovements[id] = (stats.missedMovements[id] || 0) + 1;
-    });
-    (missedMuscleIds || []).forEach((id) => {
-      stats.missedMuscles[id] = (stats.missedMuscles[id] || 0) + 1;
-    });
     saveStats(stats);
     return stats;
   }
@@ -129,8 +138,8 @@ window.AnatomiaApp = window.AnatomiaApp || {};
   }
 
   App.Scoring = {
-    evaluateSet,
-    evaluateSingleChoice,
+    evaluateCategory,
+    evaluateMuscle,
     loadStats,
     recordResult,
     resetStats

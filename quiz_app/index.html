@@ -1,237 +1,113 @@
 <!DOCTYPE html>
-<html lang="hu" data-theme="dark">
+<html lang="hu" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Anatómia Kvíz Stúdió – Mozgások és Izmok</title>
+  <title>Alsó végtag – Izomgyakorló</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <div class="brand" id="btnHome" role="button" tabindex="0" title="Vissza a főoldalra">
-        <span class="brand-icon">🦴</span>
-        <div class="brand-text">
-          <h1>Anatómia Kvíz Stúdió</h1>
-          <span class="brand-sub" id="comboCounterBadge">20 000+ lehetséges kombináció</span>
-        </div>
+      <div class="brand">
+        <h1 class="brand-title">Alsó végtag – Izomgyakorló</h1>
+        <span class="brand-stats" id="statsSummary">Megoldva: 0 · Átlag: 0%</span>
+        <button type="button" class="btn-link" id="btnResetStats" title="Statisztika törlése">Nullázás</button>
       </div>
 
       <div class="topbar-controls">
-        <div class="control-group" title="Elnevezések megjelenítése">
-          <span class="control-label">Nyelv</span>
-          <div class="segmented" id="langSwitch">
-            <button type="button" data-val="both" class="active">Mindkettő</button>
-            <button type="button" data-val="latin">Latin</button>
-            <button type="button" data-val="hu">Magyar</button>
-          </div>
+        <div class="segmented" id="langSwitch" aria-label="Nyelv kiválasztása">
+          <button type="button" data-val="both" class="active">Mindkettő</button>
+          <button type="button" data-val="latin">Latin</button>
+          <button type="button" data-val="hu">Magyar</button>
         </div>
-
-        <div class="control-group" title="Válaszadási nehézség">
-          <span class="control-label">Mód</span>
-          <div class="segmented" id="inputModeSwitch">
-            <button type="button" data-val="chips" class="active">Könnyű (kártyák)</button>
-            <button type="button" data-val="search">Haladó (kereső)</button>
-          </div>
-        </div>
-
-        <div class="control-group" title="Izom-adatbázis részletessége">
-          <span class="control-label">Izmok</span>
-          <div class="segmented" id="tierSwitch">
-            <button type="button" data-val="core" class="active">Alap</button>
-            <button type="button" data-val="full">Teljes</button>
-          </div>
-        </div>
-
-        <div class="topbar-actions">
-          <button type="button" class="btn btn-secondary btn-sm" id="btnOpenLexicon">📖 Puska</button>
-          <button type="button" class="btn btn-icon" id="btnThemeToggle" title="Sötét / világos téma">☀️</button>
-        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="btnOpenLexicon">Jegyzet</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btnThemeToggle">Sötét mód</button>
       </div>
     </div>
   </header>
 
   <main class="container">
-    <!-- LOBBY / SETUP VIEW -->
-    <section id="viewLobby" class="view active">
-      <div class="stats-strip" id="statsStrip">
-        <div class="stat-box">
-          <span class="stat-val" id="statTotal">0</span>
-          <span class="stat-lbl">Megoldott</span>
+    <section class="toolbar" aria-label="Gyakorlási szűrők és beállítások">
+      <div class="toolbar-row">
+        <div class="toolbar-group">
+          <span class="toolbar-label">Csoportok</span>
+          <div class="toggle-group" id="groupFilters"></div>
         </div>
-        <div class="stat-box">
-          <span class="stat-val" id="statAvg">0%</span>
-          <span class="stat-lbl">Átlag</span>
+
+        <div class="toolbar-group">
+          <span class="toolbar-label">Kategóriák</span>
+          <div class="toggle-group" id="categoryFilters"></div>
         </div>
-        <div class="stat-box">
-          <span class="stat-val" id="statPerfect">0</span>
-          <span class="stat-lbl">Hibátlan</span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-val" id="statStreak">0 🔥</span>
-          <span class="stat-lbl">Széria</span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-val" id="statBest">0</span>
-          <span class="stat-lbl">Rekord</span>
-        </div>
-        <button type="button" class="btn btn-ghost btn-sm" id="btnResetStats" title="Statisztika törlése">↺ Nullázás</button>
       </div>
 
-      <div class="card setup-card">
-        <div class="section-head">
-          <h2>1. Válassz gyakorlómódot</h2>
-          <p class="muted">Minden mód ugyanabból a relációs anatómiai tudásgráfból dolgozik.</p>
-        </div>
-
-        <div class="mode-grid" id="modeGrid">
-          <button type="button" class="mode-card active" data-mode="combo_mixed">
-            <div class="mode-top">
-              <span class="mode-emoji">🎯</span>
-              <span class="pill pill-accent">Ajánlott</span>
-            </div>
-            <h3>Mozdulat-elemző (Vegyes)</h3>
-            <p>Összetett generált mozdulatok + életszerű és sport-forgatókönyvek. Válaszd ki a mozgásokat és a feszülő izmokat!</p>
-          </button>
-
-          <button type="button" class="mode-card" data-mode="combo_only">
-            <div class="mode-top">
-              <span class="mode-emoji">🎲</span>
-              <span class="pill">Végtelen</span>
-            </div>
-            <h3>Kombinatorikus keverő</h3>
-            <p>1–3 különböző ízület mozgását fűzi össze természetes leírássá – több ezer egyedi feladattal.</p>
-          </button>
-
-          <button type="button" class="mode-card" data-mode="scenarios_only">
-            <div class="mode-top">
-              <span class="mode-emoji">🏋️</span>
-              <span class="pill">42 gyakorlat</span>
-            </div>
-            <h3>Életszerű &amp; Sport-mozdulatok</h3>
-            <p>Guggolás, fekvőtámasz, poháremelés, csavarozás, foci, törökülés és sok más valós helyzet fázisai.</p>
-          </button>
-
-          <button type="button" class="mode-card" data-mode="reverse">
-            <div class="mode-top">
-              <span class="mode-emoji">🔄</span>
-              <span class="pill">Fordított</span>
-            </div>
-            <h3>Izom → Mozgások</h3>
-            <p>Megadunk egy feszülő izmot – találd ki, pontosan milyen anatómiai mozgásokat hoz létre!</p>
-          </button>
-
-          <button type="button" class="mode-card" data-mode="anatomy_facts">
-            <div class="mode-top">
-              <span class="mode-emoji">🧬</span>
-              <span class="pill">Vizsga</span>
-            </div>
-            <h3>Eredés / Tapadás / Beidegzés</h3>
-            <p>Villámkvíz az izmok pontos eredéséről, tapadásáról és beidegzéséről, okos zavaró válaszokkal.</p>
-          </button>
-
-          <button type="button" class="mode-card" data-mode="movement_terms">
-            <div class="mode-top">
-              <span class="mode-emoji">🧭</span>
-              <span class="pill">Alapozás</span>
-            </div>
-            <h3>Mozgásfajta-edző</h3>
-            <p>Hétköznapi leírásból ismerd fel az anatómiai szakkifejezést (pl. szupináció, inverzió, protrakció).</p>
-          </button>
-        </div>
-
-        <hr class="divider" />
-
-        <div class="filters-grid">
-          <div class="filter-block">
-            <div class="filter-header">
-              <h3>2. Tájegységek szűrése</h3>
-              <button type="button" class="btn-link" id="btnSelectAllRegions">Mind kijelöl</button>
-            </div>
-            <div class="region-pills" id="regionPills"></div>
-          </div>
-
-          <div class="filter-block" id="complexityBlock">
-            <h3>3. Kombináció összetettsége</h3>
-            <div class="segmented segmented-wide" id="complexitySwitch">
-              <button type="button" data-val="mix" class="active">Vegyes (1–3)</button>
-              <button type="button" data-val="1">1 ízület</button>
-              <button type="button" data-val="2">2 ízület</button>
-              <button type="button" data-val="3">3 ízület</button>
-            </div>
-
-            <div class="checkbox-list">
-              <label class="checkbox-row">
-                <input type="checkbox" id="chkCountHint" checked />
-                <span>Darabszám súgó mutatása (pl. „2 mozgás, 4 fő izom”)</span>
-              </label>
-              <label class="checkbox-row">
-                <input type="checkbox" id="chkStrictSynergists" />
-                <span>Szigorú mód: segédizmok (szinergisták) is kötelezőek</span>
-              </label>
-              <label class="checkbox-row" id="weakOnlyRow" style="display:none;">
-                <input type="checkbox" id="chkWeakOnly" />
-                <span>Gyakran rontott elemek előnyben részesítése</span>
-              </label>
-            </div>
+      <div class="toolbar-row toolbar-row-secondary">
+        <div class="toolbar-group">
+          <span class="toolbar-label">Sorrend</span>
+          <div class="segmented" id="orderSwitch">
+            <button type="button" data-val="random" class="active">Véletlenszerű</button>
+            <button type="button" data-val="sequential">Sorrendben</button>
           </div>
         </div>
 
-        <div class="start-bar">
-          <div class="variety-info" id="varietyInfo"></div>
-          <button type="button" class="btn btn-primary btn-lg" id="btnStartQuiz">Kvíz indítása →</button>
+        <div class="toolbar-group toolbar-jump">
+          <label class="toolbar-label" for="muscleJumpSelect">Ugrás izomhoz</label>
+          <select id="muscleJumpSelect" class="select-input"></select>
+        </div>
+
+        <div class="toolbar-checks">
+          <label class="check-item">
+            <input type="checkbox" id="chkCountHint" />
+            <span>Darabszám mutatása</span>
+          </label>
+          <label class="check-item" id="weakOnlyLabel" style="display:none;">
+            <input type="checkbox" id="chkWeakOnly" />
+            <span>Csak rontott izmok</span>
+          </label>
         </div>
       </div>
     </section>
 
-    <!-- QUIZ VIEW -->
-    <section id="viewQuiz" class="view">
-      <div class="quiz-header">
-        <button type="button" class="btn btn-secondary btn-sm" id="btnBackLobby">← Beállítások</button>
-        <div class="quiz-meta">
-          <span class="pill" id="quizQuestionCounter">1. kérdés</span>
-          <span class="pill pill-accent" id="quizSessionScore">Munkamenet: –</span>
-          <span class="pill" id="quizLiveStreak">0 🔥</span>
+    <section class="exercise-card" id="exerciseCard">
+      <div class="exercise-head">
+        <div class="exercise-title-wrap">
+          <div class="exercise-meta">
+            <span class="meta-badge" id="progressBadge">1 / 47</span>
+            <span class="meta-subgroup" id="muscleSubgroup"></span>
+          </div>
+          <h2 class="muscle-title" id="muscleTitle"></h2>
+          <p class="muscle-subtitle" id="muscleSubtitle"></p>
+        </div>
+
+        <div class="exercise-nav">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnPrevMuscle">Előző</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnNextTop">Következő</button>
         </div>
       </div>
 
-      <div class="card question-card" id="questionCard">
-        <!-- Dynamically rendered by app.js -->
-      </div>
+      <div class="categories-grid" id="categoriesContainer"></div>
 
-      <div class="card feedback-card" id="feedbackCard" style="display:none;">
-        <!-- Dynamically rendered evaluation -->
-      </div>
+      <div class="exercise-footer" id="exerciseFooter"></div>
     </section>
   </main>
 
-  <!-- LEXICON / CHEATSHEET DRAWER -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside class="drawer" id="lexiconDrawer" aria-hidden="true">
     <div class="drawer-header">
-      <h2>📖 Anatómiai Puska &amp; Lexikon</h2>
-      <button type="button" class="btn btn-icon" id="btnCloseLexicon" title="Bezárás">✕</button>
+      <h2>Alsó végtagi izmok jegyzete</h2>
+      <button type="button" class="btn btn-secondary btn-sm" id="btnCloseLexicon">Bezárás</button>
     </div>
-    <div class="drawer-tabs">
-      <button type="button" class="drawer-tab active" data-tab="movements">Mozgásfajták</button>
-      <button type="button" class="drawer-tab" data-tab="muscles">Izmok (eredés/tapadás)</button>
-    </div>
-    <div class="drawer-search">
-      <input type="text" id="lexiconSearch" placeholder="Keresés (ékezet nélkül is, pl. szupinacio, biceps)..." />
-      <select id="lexiconRegionFilter">
-        <option value="all">Minden tájegység</option>
+    <div class="drawer-filters">
+      <input type="text" id="lexiconSearch" class="text-input" placeholder="Keresés (izom, eredés, tapadás, ideg)..." />
+      <select id="lexiconGroupFilter" class="select-input">
+        <option value="all">Minden csoport</option>
       </select>
     </div>
     <div class="drawer-body" id="lexiconBody"></div>
   </aside>
 
-  <!-- Data & App scripts (no ES module CORS issues on file://) -->
-  <script defer src="data/joints.js"></script>
-  <script defer src="data/movements.js"></script>
-  <script defer src="data/muscles.js"></script>
-  <script defer src="data/scenarios.js"></script>
+  <script defer src="data/lower_limb_muscles.js"></script>
   <script defer src="js/scoring.js"></script>
-  <script defer src="js/generator.js"></script>
   <script defer src="js/app.js"></script>
 </body>
 </html>
